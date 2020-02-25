@@ -70,13 +70,14 @@ func main() {
 			rows, err := db.Query("select * from animals where age > $1", 5)
 			handlerows(rows, err)
 		case option == "querySingleRow":
-			row := db.QueryRow("select * from animals where age > $1", 5)
 			a := animal{}
-			err = row.Scan(&a.id, &a.animalType, &a.nickname, &a.zone, &a.age)
-			if err != nil {
-				log.Fatal(err)
-			}
-			log.Println("Results from General Query.....:")
+			db.QueryRow("select * from animals where age > $1", 5).Scan(&a.id, &a.animalType, &a.nickname, &a.zone, &a.age)
+			// a := animal{}
+			// err = row.Scan(&a.id, &a.animalType, &a.nickname, &a.zone, &a.age)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			log.Println("\nResults from Single Query.....:")
 			fmt.Println(a)
 		case option == "insert":
 			result, err := db.Exec("Insert into animals (animal_type, nickname, zone, age) values ('Carnotaurus', 'Carno', $1, $2)", 3, 22)
