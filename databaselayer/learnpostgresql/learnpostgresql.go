@@ -72,11 +72,6 @@ func main() {
 		case option == "querySingleRow":
 			a := animal{}
 			db.QueryRow("select * from animals where age > $1", 5).Scan(&a.id, &a.animalType, &a.nickname, &a.zone, &a.age)
-			// a := animal{}
-			// err = row.Scan(&a.id, &a.animalType, &a.nickname, &a.zone, &a.age)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
 			log.Println("\nResults from Single Query.....:")
 			fmt.Println(a)
 		case option == "insert":
