@@ -71,7 +71,7 @@ func main() {
 	*/
 
 	//update a row
-	age := 14
+	age := 15
 	id := 2
 	result, err := db.Exec("Update Dino.animals set age=? where id=?", age, id)
 	if err != nil {
