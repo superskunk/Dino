@@ -30,18 +30,24 @@ func init() {
 		2: "querySingleRow",
 		3: "insert",
 		4: "update",
-		5: "end",
+		5: "preparedStatement",
+		6: "testTransaction",
+		7: "insertTransaction",
+		8: "end",
 	}
 }
 
 func menu() string {
 	option := 0
-	for option < 1 || option > 5 {
+	for option < 1 || option > 8 {
 		fmt.Println("1. General Query with parameters")
 		fmt.Println("2. Query a Single Row")
 		fmt.Println("3. Insert a Row")
 		fmt.Println("4. Update a Row")
-		fmt.Println("5. Exit")
+		fmt.Println("5. Prepared Statement")
+		fmt.Println("6. testTransactions")
+		fmt.Println("7. Insert Transaction")
+		fmt.Println("8. Exit")
 		fmt.Printf("\nChoose an option....:")
 		if _, err := fmt.Fscanf(stdin, "%d", &option); err != nil {
 			// In case of not introducing a number
@@ -85,6 +91,20 @@ func main() {
 			id := 2
 			result, err := db.Exec("Update animals set age=$1 where id=$2", age, id)
 			processRows(result, err)
+		case option == "preparedStatement":
+			stmt, err := db.Prepare("select * from animals where age > $1")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer stmt.Close()
+			rows, err := stmt.Query(5)
+			handlerows(rows, err)
+		case option == "testTransaction":
+			testTransaction(db)
+		case option == "insertTransaction":
+			a := &animal{0, "AlloSaurus", "Allo", 3, 25}
+			result, err := insertAnimal(db, a)
+			processRows(result, err)
 		case option == "end":
 			return
 		}
@@ -119,6 +139,50 @@ func handlerows(rows *sql.Rows, err error) {
 	}
 }
 
+func testTransaction(db *sql.DB) {
+	fmt.Println("Transactions...")
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare("select * from animals where age > $1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(6)
+	handlerows(rows, err)
+	rows, err = stmt.Query(2)
+	handlerows(rows, err)
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func insertAnimal(db *sql.DB, a *animal) (sql.Result, error) {
+	fmt.Printf("Starting transaction for inserting animal: %v\n", a)
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err := tx.Prepare("insert into animals(animal_type, nickname, zone, age) values($1,$2,$3,$4)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	result, err := stmt.Exec(a.animalType, a.nickname, a.zone, a.age)
+	if err != nil {
+		fmt.Printf("Rollback transaction for inserting animal: %v\n", a)
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	return result, err
+}
 func processRows(result sql.Result, err error) {
 	if err != nil {
 		log.Fatal(err)
